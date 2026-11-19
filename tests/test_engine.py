@@ -76,17 +76,14 @@ def test_out_of_ammo_loss_condition():
 
 
 def test_player_hp_zero_loss_condition():
-    engine = GameEngine(grid_size=4, ship_sizes=[2], max_shots=10, ai_hit_chance=1.0)
-    engine.board = engine.create_board()
-    engine.board[0][0] = 1
-    engine.board[0][1] = 1
-    engine.ships = [{(0, 0), (0, 1)}]
+    engine = GameEngine(grid_size=4, ship_sizes=[2], max_shots=10)
+    engine.place_player_ship(0, 0, 2, "hrztl")
 
-    engine.fire_shot(3, 3)
-    assert engine.player_hp == 1
-    assert engine.game_over is False
+    for _ in range(16):
+        if engine.game_over:
+            break
+        engine.execute_ai_turn()
 
-    engine.fire_shot(3, 2)
     assert engine.player_hp == 0
     assert engine.game_over is True
     assert engine.won is False
@@ -129,3 +126,20 @@ def test_player_shots_tracking():
     assert engine.fire_shot(r2, c2) == "sunk"
     assert engine.player_shots[(r1, c1)] == "sunk"
     assert engine.player_shots[(r2, c2)] == "sunk"
+
+def test_execute_ai_turn_tracks_shots_and_sinks():
+    engine = GameEngine(grid_size=4, ship_sizes=[2], max_shots=10)
+    engine.place_player_ship(0, 0, 2, "hrztl")
+
+    for _ in range(16):
+        if engine.game_over:
+            break
+        result = engine.execute_ai_turn()
+        assert result in ("hit", "miss", "sunk")
+        assert engine.last_ai_shot in engine.ai_shots
+
+    assert engine.player_hp == 0
+    assert engine.game_over is True
+    assert engine.loss_reason == "hp"
+    assert engine.ai_shots[(0, 0)] == "sunk"
+    assert engine.ai_shots[(0, 1)] == "sunk"

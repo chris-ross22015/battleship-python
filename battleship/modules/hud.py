@@ -9,49 +9,21 @@ except ImportError:
 
 class GameHUD:
     def __init__(self, root, on_rotate, on_toggle_view):
-        self.status_label = tk.Label(
-            root,
-            text="",
-            font=constants.STATUS_FONT,
-            width=52,
-        )
+        # [HUD: Status Banner]
+        board_pixel_width = (config.GRID_SIZE * constants.TILE_SIZE) + 20
+        self.status_label = tk.Label(root, text="", font=constants.STATUS_FONT, height=2, wraplength=board_pixel_width, justify=tk.CENTER)
         self.status_label.grid(row=0, column=0, pady=(6, 4))
-
-        self.rotate_btn = tk.Button(
-            root,
-            text="Rotate Ship (R): Horizontal",
-            font=constants.ROTATE_BTN_FONT,
-            command=on_rotate,
-        )
+        # [HUD: Setup Rotate Button]
+        self.rotate_btn = tk.Button(root, text="Rotate Ship (R): Horizontal", font=constants.ROTATE_BTN_FONT, command=on_rotate)
         self.rotate_btn.grid(row=1, column=0, pady=(0, 6))
-
+        # [HUD: Battle Control Bar]
         self.battle_hud_frame = tk.Frame(root)
-
-        self.hp_canvas = tk.Canvas(
-            self.battle_hud_frame,
-            width=constants.HP_BAR_WIDTH,
-            height=constants.HP_BAR_HEIGHT,
-            bg=constants.HP_BAR_BG,
-            highlightthickness=1,
-            highlightbackground=constants.HP_BAR_BORDER,
-        )
-        self.hp_fill = self.hp_canvas.create_rectangle(
-            0,
-            0,
-            constants.HP_BAR_WIDTH,
-            constants.HP_BAR_HEIGHT,
-            fill=constants.HP_BAR_HIGH_COLOR,
-            width=0,
-        )
+        # [HUD: Fleet Health Bar]
+        self.hp_canvas = tk.Canvas(self.battle_hud_frame, width=constants.HP_BAR_WIDTH, height=constants.HP_BAR_HEIGHT, bg=constants.HP_BAR_BG, highlightthickness=1, highlightbackground=constants.HP_BAR_BORDER)
+        self.hp_fill = self.hp_canvas.create_rectangle(0, 0, constants.HP_BAR_WIDTH, constants.HP_BAR_HEIGHT, fill=constants.HP_BAR_HIGH_COLOR, width=0)
         self.hp_canvas.pack(side=tk.LEFT, padx=(0, 12))
-
-        self.view_toggle_btn = tk.Button(
-            self.battle_hud_frame,
-            text=constants.FLEET_VIEW_BTN_TEXT,
-            font=constants.VIEW_BTN_FONT,
-            width=12,
-            command=on_toggle_view,
-        )
+        # [HUD: Game / Fleet View Toggle]
+        self.view_toggle_btn = tk.Button(self.battle_hud_frame, text=constants.FLEET_VIEW_BTN_TEXT, font=constants.VIEW_BTN_FONT, width=12, command=on_toggle_view)
         self.view_toggle_btn.pack(side=tk.LEFT)
 
     def set_setup_status(self, ship_index, note=""):

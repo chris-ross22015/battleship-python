@@ -24,12 +24,15 @@ class GameEngine:
 
         # --- Enemy Board & AI Controller ---
         self.ai_hit_chance = ai_hit_chance
-        self.ai = AIController(hit_chance=ai_hit_chance)
+        self.ai = AIController()
         self.board = self.create_board()
         self.ships = []
         self.hit_coords = set()
         self.last_sunk_coords = []
         self.ai_shots = {}
+        self.ai_hit_coords = set()
+        self.last_ai_shot = None
+        self.last_ai_sunk_coords = []
         self.place_ships()
 
         # --- Player Fleet, Ammo & Health ---
@@ -88,11 +91,50 @@ class GameEngine:
                     self.ships.append(set(ship_coords))
                     break
 
-    def simulate_ai_turn(self):
-        if self.ai.should_hit_player():
+    def execute_ai_turn(self):
+        if self.game_over:
+            return "ignored"
+
+        self.last_ai_sunk_coords = []
+        target = self.ai.choose_target(self.grid_size, self.ai_shots)
+        if target is None:
+            return "ignored"
+
+        r, c = target
+        self.last_ai_shot = target
+        is_hit = self.player_board[r][c] == 1
+        sunk_ship = False
+
+        if is_hit:
             self.player_hp = max(0, self.player_hp - 1)
-            return True
-        return False
+            self.ai_hit_coords.add((r, c))
+            for ship in self.player_ships:
+                if (r, c) in ship and ship.issubset(self.ai_hit_coords):
+                    self.last_ai_sunk_coords = list(ship)
+                    sunk_ship = True
+                    break
+
+        if not is_hit:
+            result = "miss"
+            self.ai_shots[(r, c)] = "miss"
+        elif sunk_ship:
+            result = "sunk"
+            for coord in self.last_ai_sunk_coords:
+                self.ai_shots[coord] = "sunk"
+        else:
+            result = "hit"
+            self.ai_shots[(r, c)] = "hit"
+
+        if self.player_hp == 0:
+            self.game_over = True
+            self.won = False
+            self.loss_reason = "hp"
+        elif self.shots_left == 0:
+            self.game_over = True
+            self.won = False
+            self.loss_reason = "ammo"
+
+        return result
 
     def fire_shot(self, r, c):
         if self.game_over or (r, c) in self.player_shots:
@@ -128,9 +170,6 @@ class GameEngine:
             self.game_over = True
             self.won = True
             return result
-
-        # Enemy counter-attack (temporary HP simulation)
-        self.simulate_ai_turn()
 
         if self.player_hp == 0:
             self.game_over = True
