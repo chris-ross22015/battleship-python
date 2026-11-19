@@ -1,7 +1,9 @@
+# [Constants: HUD & Status Banner]
 STATUS_FONT = ("Arial", 12, "bold")
 SHOTS_LABEL_PREFIX = "Shots Left"
 HP_LABEL_PREFIX = "Fleet HP"
 
+# [Constants: Fleet Setup & Controls]
 SHIP_COLOR = "#34495E"
 SHIP_TEXT = "S"
 PREVIEW_VALID_COLOR = "#2ECC71"
@@ -13,6 +15,7 @@ FLEET_VIEW_BTN_TEXT = "Fleet View"
 GAME_VIEW_BTN_TEXT = "Game View"
 FLEET_VIEW_STATUS_NOTE = "Viewing Friendly Fleet (Click 'Game View' to Resume)"
 
+# [Constants: Board Borders & Health Bar]
 GRID_BORDER_WIDTH = 4
 GAME_VIEW_BORDER_COLOR = "#B22222"   # firebrick (combat / enemy waters border)
 FLEET_VIEW_BORDER_COLOR = "#2E8B57"  # seagreen (friendly fleet border)
@@ -26,10 +29,9 @@ HP_BAR_HIGH_COLOR = "#2E8B57"  # seagreen
 HP_BAR_MID_COLOR = "#DAA520"   # goldenrod
 HP_BAR_LOW_COLOR = "#B22222"   # firebrick
 
+# [Constants: Grid Tiles & Water]
 TILE_SIZE = 38
 TILE_BORDER_COLOR = "#000080"  # navy
-BTN_WIDTH = 4
-BTN_HEIGHT = 2
 BTN_FONT = ("Arial", 9, "bold")
 
 WATER_TEXT = "~"
@@ -37,6 +39,7 @@ WATER_COLOR = "#4682B4"        # steelblue (Enemy Waters / Game View)
 FLEET_WATER_COLOR = "#7EC0EE"  # skyblue2 (Lighter Friendly Waters / Fleet View)
 TEXT_COLOR = "#FFFFFF"         # white
 
+# [Constants: Shot States & Markers]
 HIT_TEXT = "X"
 SUNK_TEXT = "SUNK"
 SUNK_FONT = ("Arial", 8, "bold")
@@ -48,6 +51,7 @@ HIT_COLOR = "#FF0000"          # red
 SUNK_COLOR = "#8B0000"         # darkred
 MISS_COLOR = "#B0C4DE"         # lightsteelblue
 
+# [Constants: AI Turn Sequence & Status Notes]
 AI_TURN_DELAY_MS = 850
 AI_RETURN_DELAY_MS = 1100
 AI_LAST_SHOT_BORDER_COLOR = "#FF0000"  # red highlight on newest enemy shot
@@ -56,7 +60,7 @@ AI_HIT_STATUS_NOTE = "Enemy Hit Your Ship!"
 AI_SUNK_STATUS_NOTE = "Enemy Sunk One of Your Ships!"
 AI_MISS_STATUS_NOTE = "Enemy Shot Missed!"
 
-
+# [Constants: End Game States]
 VICTORY_COLOR = "#008000"      # green
 VICTORY_TEXT = "VICTORY! All enemy ships sunk!"
 

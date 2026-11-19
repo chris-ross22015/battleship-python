@@ -8,6 +8,7 @@ except ImportError:
 
 
 class GameHUD:
+    # [Section: Initialization]
     def __init__(self, root, on_rotate, on_toggle_view):
         # [HUD: Status Banner]
         board_pixel_width = (config.GRID_SIZE * constants.TILE_SIZE) + 20
@@ -26,25 +27,20 @@ class GameHUD:
         self.view_toggle_btn = tk.Button(self.battle_hud_frame, text=constants.FLEET_VIEW_BTN_TEXT, font=constants.VIEW_BTN_FONT, width=12, command=on_toggle_view)
         self.view_toggle_btn.pack(side=tk.LEFT)
 
+    # [Section: Status & Banner Updates]
     def set_setup_status(self, ship_index, note=""):
         ship_size = config.SHIP_SIZES[ship_index]
-        ship_num = ship_index + 1
-        total_ships = len(config.SHIP_SIZES)
-        base = f"Deploy Fleet ({ship_num}/{total_ships}) — Place Size-{ship_size} Ship"
-        text = f"{base}  |  {note}" if note else base
-        self.status_label.config(text=text)
+        base = f"Deploy Fleet ({ship_index + 1}/{len(config.SHIP_SIZES)}) — Place Size-{ship_size} Ship"
+        self.status_label.config(text=f"{base}  |  {note}" if note else base)
 
     def set_battle_status(self, shots_left, player_hp, max_player_hp, event_note=""):
-        base = (
-            f"{constants.SHOTS_LABEL_PREFIX}: {shots_left}  |  "
-            f"{constants.HP_LABEL_PREFIX}: {player_hp}/{max_player_hp}"
-        )
-        text = f"{base}  —  {event_note}" if event_note else base
-        self.status_label.config(text=text)
+        base = f"{constants.SHOTS_LABEL_PREFIX}: {shots_left}  |  {constants.HP_LABEL_PREFIX}: {player_hp}/{max_player_hp}"
+        self.status_label.config(text=f"{base}  —  {event_note}" if event_note else base)
 
     def set_game_over_status(self, text, color):
         self.status_label.config(text=text, fg=color)
 
+    # [Section: Controls & Health Bar]
     def update_orientation_label(self, orientation):
         label = "Horizontal" if orientation == "hrztl" else "Vertical"
         self.rotate_btn.config(text=f"Rotate Ship (R): {label}")
@@ -55,23 +51,11 @@ class GameHUD:
         self.view_toggle_btn.config(text=constants.FLEET_VIEW_BTN_TEXT)
 
     def set_view_toggle_label(self, viewing_player_fleet):
-        btn_text = (
-            constants.GAME_VIEW_BTN_TEXT
-            if viewing_player_fleet
-            else constants.FLEET_VIEW_BTN_TEXT
-        )
-        self.view_toggle_btn.config(text=btn_text)
+        self.view_toggle_btn.config(text=constants.GAME_VIEW_BTN_TEXT if viewing_player_fleet else constants.FLEET_VIEW_BTN_TEXT)
 
     def update_health_bar(self, player_hp, max_player_hp):
         ratio = player_hp / max_player_hp if max_player_hp > 0 else 0
         fill_width = int(constants.HP_BAR_WIDTH * ratio)
-
-        if ratio > 0.5:
-            bar_color = constants.HP_BAR_HIGH_COLOR
-        elif ratio > 0.25:
-            bar_color = constants.HP_BAR_MID_COLOR
-        else:
-            bar_color = constants.HP_BAR_LOW_COLOR
-
+        bar_color = constants.HP_BAR_HIGH_COLOR if ratio > 0.5 else (constants.HP_BAR_MID_COLOR if ratio > 0.25 else constants.HP_BAR_LOW_COLOR)
         self.hp_canvas.coords(self.hp_fill, 0, 0, fill_width, constants.HP_BAR_HEIGHT)
         self.hp_canvas.itemconfig(self.hp_fill, fill=bar_color)
