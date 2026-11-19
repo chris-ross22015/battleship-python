@@ -115,3 +115,17 @@ def test_player_ship_placement_overlap_rejected():
     assert engine.place_player_ship(1, 3, 3, "vert") is False
     assert len(engine.player_ships) == 1
     assert engine.player_board[1][3] == 0
+
+def test_player_shots_tracking():
+    engine = GameEngine(grid_size=6, ship_sizes=[2], max_shots=10, ai_hit_chance=0.0)
+    ship_cells = list(engine.ships[0])
+    r1, c1 = ship_cells[0]
+    r2, c2 = ship_cells[1]
+
+    assert engine.fire_shot(r1, c1) == "hit"
+    assert engine.player_shots[(r1, c1)] == "hit"
+    assert engine.fire_shot(r1, c1) == "ignored"
+
+    assert engine.fire_shot(r2, c2) == "sunk"
+    assert engine.player_shots[(r1, c1)] == "sunk"
+    assert engine.player_shots[(r2, c2)] == "sunk"

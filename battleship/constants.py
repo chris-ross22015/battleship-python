@@ -7,6 +7,16 @@ SHIP_TEXT = "S"
 PREVIEW_VALID_COLOR = "#2ECC71"
 PREVIEW_INVALID_COLOR = "#E74C3C"
 ROTATE_BTN_FONT = ("Arial", 10, "bold")
+VIEW_BTN_FONT = ("Arial", 10, "bold")
+
+FLEET_VIEW_BTN_TEXT = "Fleet View"
+GAME_VIEW_BTN_TEXT = "Game View"
+FLEET_VIEW_STATUS_NOTE = "Viewing Friendly Fleet (Click 'Game View' to Resume)"
+
+GRID_BORDER_WIDTH = 4
+GAME_VIEW_BORDER_COLOR = "#B22222"   # firebrick (combat / enemy waters border)
+FLEET_VIEW_BORDER_COLOR = "#2E8B57"  # seagreen (friendly fleet border)
+SETUP_BORDER_COLOR = "#34495E"       # dark slate (deployment border)
 
 HP_BAR_WIDTH = 220
 HP_BAR_HEIGHT = 16
@@ -23,7 +33,8 @@ BTN_HEIGHT = 2
 BTN_FONT = ("Arial", 9, "bold")
 
 WATER_TEXT = "~"
-WATER_COLOR = "#4682B4"        # steelblue
+WATER_COLOR = "#4682B4"        # steelblue (Enemy Waters / Game View)
+FLEET_WATER_COLOR = "#7EC0EE"  # skyblue2 (Lighter Friendly Waters / Fleet View)
 TEXT_COLOR = "#FFFFFF"         # white
 
 HIT_TEXT = "X"

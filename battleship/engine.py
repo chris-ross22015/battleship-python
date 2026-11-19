@@ -28,6 +28,9 @@ class GameEngine:
         self.player_board = self.create_board()
         self.player_ships = []
 
+        self.player_shots = {}
+        self.ai_shots = {}
+
         self.shots_left = self.max_shots
         self.hits = 0
         self.total_ship_cells = sum(self.ship_sizes)
@@ -88,7 +91,7 @@ class GameEngine:
         return False
 
     def fire_shot(self, r, c):
-        if self.game_over:
+        if self.game_over or (r, c) in self.player_shots:
             return "ignored"
 
         self.last_sunk_coords = []
@@ -105,10 +108,22 @@ class GameEngine:
                     sunk_ship = True
                     break
 
+        if not is_hit:
+            result = "miss"
+        elif sunk_ship:
+            result = "sunk"
+            for coord in self.last_sunk_coords:
+                self.player_shots[coord] = "sunk"
+        else:
+            result = "hit"
+
+        if result != "sunk":
+            self.player_shots[(r, c)] = result
+
         if self.hits == self.total_ship_cells:
             self.game_over = True
             self.won = True
-            return "sunk" if sunk_ship else "hit"
+            return result
 
         # Enemy counter-attack (temporary HP simulation)
         self.simulate_ai_turn()
@@ -122,6 +137,4 @@ class GameEngine:
             self.won = False
             self.loss_reason = "ammo"
 
-        if not is_hit:
-            return "miss"
-        return "sunk" if sunk_ship else "hit"
+        return result
