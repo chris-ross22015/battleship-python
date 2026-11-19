@@ -22,6 +22,7 @@ class GameEngine:
         self.board = self.create_board()
         self.ships = []
         self.hit_coords = set()
+        self.last_sunk_coords = []
         self.place_ships()
 
         self.shots_left = self.max_shots
@@ -69,6 +70,7 @@ class GameEngine:
         if self.game_over:
             return "ignored"
 
+        self.last_sunk_coords = []
         self.shots_left -= 1
         is_hit = self.board[r][c] == 1
         sunk_ship = False
@@ -78,6 +80,7 @@ class GameEngine:
             self.hit_coords.add((r, c))
             for ship in self.ships:
                 if (r, c) in ship and ship.issubset(self.hit_coords):
+                    self.last_sunk_coords = list(ship)
                     sunk_ship = True
                     break
 
@@ -101,3 +104,4 @@ class GameEngine:
         if not is_hit:
             return "miss"
         return "sunk" if sunk_ship else "hit"
+

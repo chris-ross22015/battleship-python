@@ -14,6 +14,7 @@
 
 
 ## Phase 3: Polish & Packaging
+- [ ] **Resolution-Independent Responsive Layout:** Dynamically scale board tiles, HUD bars, and fonts to fit any desktop window, tablet, or phone aspect ratio without clipping or grid distortion
 - [ ] **New Game / Reset Button:** Restart the match cleanly without closing the window
 - [ ] **Difficulty Presets:** Small, Medium, and Large grid configurations (`grid_size`, `ship_sizes`, `max_shots`)
 - [ ] **Terrain / Islands:** Impassable island tiles that block ship placement and soak up incoming shots (toggleable)

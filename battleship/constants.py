@@ -10,6 +10,8 @@ HP_BAR_HIGH_COLOR = "seagreen"
 HP_BAR_MID_COLOR = "goldenrod"
 HP_BAR_LOW_COLOR = "firebrick"
 
+TILE_SIZE = 38
+TILE_BORDER_COLOR = "navy"
 BTN_WIDTH = 4
 BTN_HEIGHT = 2
 BTN_FONT = ("Arial", 9, "bold")
@@ -20,6 +22,8 @@ TEXT_COLOR = "white"
 
 HIT_TEXT = "X"
 SUNK_TEXT = "SUNK"
+SUNK_FONT = ("Arial", 8, "bold")
+SUNK_ANGLE = 45
 MISS_TEXT = "O"
 HIT_TEXT_COLOR = "white"
 MISS_TEXT_COLOR = "navy"

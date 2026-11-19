@@ -19,8 +19,9 @@ class BattleshipGame:
             self.root,
             text=self.format_status(),
             font=constants.STATUS_FONT,
+            width=44,
         )
-        self.status_label.grid(row=0, column=0, columnspan=config.GRID_SIZE, pady=(6, 2))
+        self.status_label.grid(row=0, column=0, pady=(6, 2))
 
         self.hp_canvas = tk.Canvas(
             self.root,
@@ -30,7 +31,7 @@ class BattleshipGame:
             highlightthickness=1,
             highlightbackground=constants.HP_BAR_BORDER,
         )
-        self.hp_canvas.grid(row=1, column=0, columnspan=config.GRID_SIZE, pady=(0, 6))
+        self.hp_canvas.grid(row=1, column=0, pady=(0, 6))
         self.hp_fill = self.hp_canvas.create_rectangle(
             0,
             0,
@@ -40,7 +41,9 @@ class BattleshipGame:
             width=0,
         )
 
-        self.buttons = self.build_grid()
+        self.grid_frame = tk.Frame(self.root)
+        self.grid_frame.grid(row=2, column=0, padx=8, pady=(0, 8))
+        self.tiles = self.build_grid()
 
     def format_status(self, event_note=""):
         base = (
@@ -68,53 +71,81 @@ class BattleshipGame:
         self.hp_canvas.itemconfig(self.hp_fill, fill=bar_color)
 
     def build_grid(self):
-        buttons = []
+        tiles = []
+        center = constants.TILE_SIZE // 2
         for r in range(config.GRID_SIZE):
-            row_buttons = []
+            row_tiles = []
             for c in range(config.GRID_SIZE):
-                btn = tk.Button(
-                    self.root,
-                    width=constants.BTN_WIDTH,
-                    height=constants.BTN_HEIGHT,
-                    text=constants.WATER_TEXT,
+                canvas = tk.Canvas(
+                    self.grid_frame,
+                    width=constants.TILE_SIZE,
+                    height=constants.TILE_SIZE,
                     bg=constants.WATER_COLOR,
-                    command=lambda r=r, c=c: self.on_square_click(r, c),
+                    bd=0,
+                    highlightthickness=1,
+                    highlightbackground=constants.TILE_BORDER_COLOR,
                 )
-                btn.grid(row=r + 2, column=c)
-                row_buttons.append(btn)
-            buttons.append(row_buttons)
-        return buttons
+                canvas.grid(row=r, column=c)
+                text_id = canvas.create_text(
+                    center,
+                    center,
+                    text=constants.WATER_TEXT,
+                    font=constants.BTN_FONT,
+                    fill=constants.TEXT_COLOR,
+                )
+                canvas.bind("<Button-1>", lambda _event, r=r, c=c: self.on_square_click(r, c))
+                row_tiles.append((canvas, text_id))
+            tiles.append(row_tiles)
+        return tiles
+
+
+    def mark_ship_sunk(self, coords):
+        for sr, sc in coords:
+            tile_canvas, tile_text_id = self.tiles[sr][sc]
+            tile_canvas.config(bg=constants.SUNK_COLOR)
+            tile_canvas.itemconfig(
+                tile_text_id,
+                text=constants.SUNK_TEXT,
+                font=constants.SUNK_FONT,
+                fill=constants.HIT_TEXT_COLOR,
+                angle=constants.SUNK_ANGLE,
+            )
 
     def disable_board(self):
-        for row in self.buttons:
-            for btn in row:
-                btn.config(state="disabled")
+        for row in self.tiles:
+            for canvas, _text_id in row:
+                canvas.unbind("<Button-1>")
 
     def on_square_click(self, r, c):
+        canvas, text_id = self.tiles[r][c]
+        canvas.unbind("<Button-1>")
+
         result = self.engine.fire_shot(r, c)
         event_note = ""
 
         if result in ("hit", "sunk"):
-            is_sunk = result == "sunk"
-            self.buttons[r][c].config(
-                text=constants.SUNK_TEXT if is_sunk else constants.HIT_TEXT,
-                font=constants.BTN_FONT,
-                bg=constants.SUNK_COLOR if is_sunk else constants.HIT_COLOR,
-                state="disabled",
-                fg=constants.HIT_TEXT_COLOR,
-                disabledforeground=constants.HIT_TEXT_COLOR,
-            )
-            if is_sunk:
+            if result == "sunk":
+                self.mark_ship_sunk(self.engine.last_sunk_coords)
                 event_note = "Enemy Ship Sunk!"
+            else:
+                canvas.config(bg=constants.HIT_COLOR)
+                canvas.itemconfig(
+                    text_id,
+                    text=constants.HIT_TEXT,
+                    font=constants.BTN_FONT,
+                    fill=constants.HIT_TEXT_COLOR,
+                    angle=0,
+                )
+
 
         elif result == "miss":
-            self.buttons[r][c].config(
+            canvas.config(bg=constants.MISS_COLOR)
+            canvas.itemconfig(
+                text_id,
                 text=constants.MISS_TEXT,
                 font=constants.BTN_FONT,
-                bg=constants.MISS_COLOR,
-                state="disabled",
-                fg=constants.MISS_TEXT_COLOR,
-                disabledforeground=constants.MISS_TEXT_COLOR,
+                fill=constants.MISS_TEXT_COLOR,
+                angle=0,
             )
 
         self.update_health_bar()
