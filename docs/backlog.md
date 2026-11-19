@@ -11,7 +11,7 @@
 - [x] **Per-Ship Sunk Detection:** Track individual ship coordinates so the engine and UI stamp `SUNK` across every segment when a ship sinks
 - [x] **10x10 Grid & Standardized Hex Palette:** Upgrade board dimensions to classic `10x10` and align all UI color constants to `#RRGGBB` hex codes
 - [x] **Player-Placed Ships (Place & Rotate):** Setup phase allowing the player to preview, rotate (`R` / button), and position their own fleet before battle starts
-- [ ] **Fleet Viewscreen Toggle ("View My Fleet"):** Button during battle to switch the single `10x10` viewscreen between Enemy Waters and the player's placed fleet
+- [X] **Fleet Viewscreen Toggle ("View My Fleet"):** Button during battle to switch the single `10x10` viewscreen between Enemy Waters and the player's placed fleet
 - [ ] **Opponent Fleet & AI Turn Viewscreen:** Replace temporary random HP drain with real AI shots fired onto `player_board`, auto-switching to the player's fleet viewscreen during the AI's turn with visual shot feedback
 - [ ] **Modularize UI (`battleship.py` Refactor):** Split `battleship.py` into focused helper modules (e.g., `board_view.py`, `hud.py`, `setup_controller.py`) for easier maintenance and clean 1-to-1 mapping to Unity C# components
 
