@@ -1,4 +1,4 @@
 WINDOW_TITLE = "Battleship"
-GRID_SIZE = 8
-SHIP_SIZES = [4, 3, 3, 2]
+GRID_SIZE = 10
+SHIP_SIZES = [5,4, 3, 3, 2]
 MAX_SHOTS = 50

@@ -91,3 +91,27 @@ def test_player_hp_zero_loss_condition():
     assert engine.game_over is True
     assert engine.won is False
     assert engine.loss_reason == "hp"
+
+def test_player_ship_placement_valid():
+    engine = GameEngine(grid_size=10, ship_sizes=[4, 3, 2])
+    assert engine.place_player_ship(0, 0, 4, "hrztl") is True
+    assert len(engine.player_ships) == 1
+    assert engine.player_board[0][0:4] == [1, 1, 1, 1]
+
+
+def test_player_ship_placement_out_of_bounds():
+    engine = GameEngine(grid_size=10, ship_sizes=[4, 3, 2])
+    # Horizontal ship starting at col 8 of a 10x10 grid goes past col 9
+    assert engine.place_player_ship(0, 8, 4, "hrztl") is False
+    # Vertical ship starting at row 8 goes past row 9
+    assert engine.place_player_ship(8, 0, 4, "vert") is False
+    assert len(engine.player_ships) == 0
+
+
+def test_player_ship_placement_overlap_rejected():
+    engine = GameEngine(grid_size=10, ship_sizes=[4, 3, 2])
+    assert engine.place_player_ship(2, 2, 3, "hrztl") is True
+    # Crossing vertically through (2, 3) should fail cleanly without altering board
+    assert engine.place_player_ship(1, 3, 3, "vert") is False
+    assert len(engine.player_ships) == 1
+    assert engine.player_board[1][3] == 0
