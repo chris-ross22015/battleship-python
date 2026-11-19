@@ -3,418 +3,139 @@ import tkinter as tk
 try:
     from battleship import config, constants
     from battleship.engine import GameEngine
+    from battleship.modules.board_view import BoardView
+    from battleship.modules.hud import GameHUD
+    from battleship.modules.setup_controller import FleetSetupController
 except ImportError:
     import config
     import constants
     from engine import GameEngine
+    from modules.board_view import BoardView
+    from modules.hud import GameHUD
+    from modules.setup_controller import FleetSetupController
 
 
 class BattleshipGame:
     def __init__(self, root):
         self.root = root
         self.root.title(config.WINDOW_TITLE)
+
         self.engine = GameEngine()
-
-        self.setup_mode = True
         self.viewing_player_fleet = False
-        self.current_ship_index = 0
-        self.orientation = "hrztl"
-        self.hover_coords = None
 
-        self.status_label = tk.Label(
-            self.root,
-            text=self.format_setup_status(),
-            font=constants.STATUS_FONT,
-            width=52,
+        self.hud = GameHUD(
+            root=self.root,
+            on_rotate=self.toggle_orientation,
+            on_toggle_view=self.toggle_board_view,
         )
-        self.status_label.grid(row=0, column=0, pady=(6, 4))
-
-        self.rotate_btn = tk.Button(
-            self.root,
-            text="Rotate Ship (R): Horizontal",
-            font=constants.ROTATE_BTN_FONT,
-            command=self.toggle_orientation,
+        self.board_view = BoardView(
+            root=self.root,
+            on_tile_enter=self.on_tile_enter,
+            on_tile_leave=self.on_tile_leave,
+            on_tile_click=self.on_square_click,
         )
-        self.rotate_btn.grid(row=1, column=0, pady=(0, 6))
-
-        self.battle_hud_frame = tk.Frame(self.root)
-
-        self.hp_canvas = tk.Canvas(
-            self.battle_hud_frame,
-            width=constants.HP_BAR_WIDTH,
-            height=constants.HP_BAR_HEIGHT,
-            bg=constants.HP_BAR_BG,
-            highlightthickness=1,
-            highlightbackground=constants.HP_BAR_BORDER,
+        self.setup = FleetSetupController(
+            engine=self.engine,
+            board_view=self.board_view,
+            hud=self.hud,
+            on_setup_complete=self.start_battle,
         )
-        self.hp_fill = self.hp_canvas.create_rectangle(
-            0,
-            0,
-            constants.HP_BAR_WIDTH,
-            constants.HP_BAR_HEIGHT,
-            fill=constants.HP_BAR_HIGH_COLOR,
-            width=0,
-        )
-        self.hp_canvas.pack(side=tk.LEFT, padx=(0, 12))
-
-        self.view_toggle_btn = tk.Button(
-            self.battle_hud_frame,
-            text=constants.FLEET_VIEW_BTN_TEXT,
-            font=constants.VIEW_BTN_FONT,
-            width=12,
-            command=self.toggle_board_view,
-        )
-        self.view_toggle_btn.pack(side=tk.LEFT)
-
-        self.grid_frame = tk.Frame(
-            self.root,
-            highlightthickness=constants.GRID_BORDER_WIDTH,
-            highlightbackground=constants.SETUP_BORDER_COLOR,
-        )
-        self.grid_frame.grid(row=2, column=0, padx=10, pady=(0, 10))
-        self.tiles = self.build_grid()
 
         self.root.bind("<r>", self.toggle_orientation)
         self.root.bind("<R>", self.toggle_orientation)
 
-
-    def format_setup_status(self, note=""):
-        ship_size = config.SHIP_SIZES[self.current_ship_index]
-        ship_num = self.current_ship_index + 1
-        total_ships = len(config.SHIP_SIZES)
-        base = f"Deploy Fleet ({ship_num}/{total_ships}) — Place Size-{ship_size} Ship"
-        return f"{base}  |  {note}" if note else base
-
-    def format_status(self, event_note=""):
-        base = (
-            f"{constants.SHOTS_LABEL_PREFIX}: {self.engine.shots_left}  |  "
-            f"{constants.HP_LABEL_PREFIX}: {self.engine.player_hp}/{self.engine.max_player_hp}"
-        )
-        return f"{base}  —  {event_note}" if event_note else base
-
     def toggle_orientation(self, _event=None):
-        if not self.setup_mode:
-            return
-        self.orientation = "vert" if self.orientation == "hrztl" else "hrztl"
-        label = "Horizontal" if self.orientation == "hrztl" else "Vertical"
-        self.rotate_btn.config(text=f"Rotate Ship (R): {label}")
-        if self.hover_coords is not None:
-            self.preview_ship(*self.hover_coords)
-
-    def toggle_board_view(self):
-        if self.setup_mode:
-            return
-        self.viewing_player_fleet = not self.viewing_player_fleet
-        self.render_active_board()
-
-        if self.viewing_player_fleet:
-            self.view_toggle_btn.config(text=constants.GAME_VIEW_BTN_TEXT)
-            if not self.engine.game_over:
-                self.status_label.config(
-                    text=self.format_status(constants.FLEET_VIEW_STATUS_NOTE)
-                )
-        else:
-            self.view_toggle_btn.config(text=constants.FLEET_VIEW_BTN_TEXT)
-            if not self.engine.game_over:
-                self.status_label.config(text=self.format_status())
-
-    def update_health_bar(self):
-        ratio = (
-            self.engine.player_hp / self.engine.max_player_hp
-            if self.engine.max_player_hp > 0
-            else 0
-        )
-        fill_width = int(constants.HP_BAR_WIDTH * ratio)
-
-        if ratio > 0.5:
-            bar_color = constants.HP_BAR_HIGH_COLOR
-        elif ratio > 0.25:
-            bar_color = constants.HP_BAR_MID_COLOR
-        else:
-            bar_color = constants.HP_BAR_LOW_COLOR
-
-        self.hp_canvas.coords(self.hp_fill, 0, 0, fill_width, constants.HP_BAR_HEIGHT)
-        self.hp_canvas.itemconfig(self.hp_fill, fill=bar_color)
-
-    def build_grid(self):
-        tiles = []
-        center = constants.TILE_SIZE // 2
-        for r in range(config.GRID_SIZE):
-            row_tiles = []
-            for c in range(config.GRID_SIZE):
-                canvas = tk.Canvas(
-                    self.grid_frame,
-                    width=constants.TILE_SIZE,
-                    height=constants.TILE_SIZE,
-                    bg=constants.WATER_COLOR,
-                    bd=0,
-                    highlightthickness=1,
-                    highlightbackground=constants.TILE_BORDER_COLOR,
-                )
-                canvas.grid(row=r, column=c)
-                text_id = canvas.create_text(
-                    center,
-                    center,
-                    text=constants.WATER_TEXT,
-                    font=constants.BTN_FONT,
-                    fill=constants.TEXT_COLOR,
-                )
-                canvas.bind("<Enter>", lambda _e, r=r, c=c: self.on_tile_enter(r, c))
-                canvas.bind("<Leave>", lambda _e: self.on_tile_leave())
-                canvas.bind("<Button-1>", lambda _e, r=r, c=c: self.on_square_click(r, c))
-                row_tiles.append((canvas, text_id))
-            tiles.append(row_tiles)
-        return tiles
-
-    def refresh_setup_board(self):
-        for r in range(config.GRID_SIZE):
-            for c in range(config.GRID_SIZE):
-                canvas, text_id = self.tiles[r][c]
-                if self.engine.player_board[r][c] == 1:
-                    canvas.config(bg=constants.SHIP_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.SHIP_TEXT,
-                        fill=constants.HIT_TEXT_COLOR,
-                    )
-                else:
-                    canvas.config(bg=constants.WATER_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.WATER_TEXT,
-                        fill=constants.TEXT_COLOR,
-                    )
-
-    def preview_ship(self, r, c):
-        self.refresh_setup_board()
-        size = config.SHIP_SIZES[self.current_ship_index]
-        coords = self.engine.get_ship_coords(r, c, size, self.orientation)
-        is_valid = self.engine.can_place_ship(self.engine.player_board, coords)
-        preview_color = (
-            constants.PREVIEW_VALID_COLOR if is_valid else constants.PREVIEW_INVALID_COLOR
-        )
-
-        for sr, sc in coords:
-            if 0 <= sr < config.GRID_SIZE and 0 <= sc < config.GRID_SIZE:
-                canvas, _text_id = self.tiles[sr][sc]
-                canvas.config(bg=preview_color)
+        self.setup.toggle_orientation()
 
     def on_tile_enter(self, r, c):
-        if not self.setup_mode:
-            return
-        self.hover_coords = (r, c)
-        self.preview_ship(r, c)
+        self.setup.on_tile_enter(r, c)
 
     def on_tile_leave(self):
-        if not self.setup_mode:
-            return
-        self.hover_coords = None
-        self.refresh_setup_board()
-
-    def handle_setup_click(self, r, c):
-        size = config.SHIP_SIZES[self.current_ship_index]
-        placed = self.engine.place_player_ship(r, c, size, self.orientation)
-        if not placed:
-            self.status_label.config(text=self.format_setup_status("Invalid position!"))
-            return
-
-        self.current_ship_index += 1
-        if self.current_ship_index >= len(config.SHIP_SIZES):
-            self.start_battle()
-        else:
-            self.refresh_setup_board()
-            self.status_label.config(text=self.format_setup_status())
+        self.setup.on_tile_leave()
 
     def start_battle(self):
-        self.setup_mode = False
         self.viewing_player_fleet = False
-        self.hover_coords = None
-        self.rotate_btn.grid_remove()
-        self.battle_hud_frame.grid(row=1, column=0, pady=(0, 6))
-        self.view_toggle_btn.config(text=constants.FLEET_VIEW_BTN_TEXT)
-        self.status_label.config(text=self.format_status("Battle Stations! Fire at will!"))
+        self.hud.switch_to_battle()
+        self.hud.set_battle_status(
+            self.engine.shots_left,
+            self.engine.player_hp,
+            self.engine.max_player_hp,
+            "Battle Stations! Fire at will!",
+        )
         self.render_active_board()
+
+    def toggle_board_view(self):
+        if self.setup.active:
+            return
+        self.viewing_player_fleet = not self.viewing_player_fleet
+        self.hud.set_view_toggle_label(self.viewing_player_fleet)
+        self.render_active_board()
+
+        if not self.engine.game_over:
+            note = constants.FLEET_VIEW_STATUS_NOTE if self.viewing_player_fleet else ""
+            self.hud.set_battle_status(
+                self.engine.shots_left,
+                self.engine.player_hp,
+                self.engine.max_player_hp,
+                note,
+            )
 
     def render_active_board(self):
         if self.viewing_player_fleet:
-            self.grid_frame.config(highlightbackground=constants.FLEET_VIEW_BORDER_COLOR)
-            self.render_fleet_board()
+            self.board_view.render_fleet_board(
+                self.engine.player_board,
+                self.engine.ai_shots,
+            )
         else:
-            self.grid_frame.config(highlightbackground=constants.GAME_VIEW_BORDER_COLOR)
-            self.render_enemy_board()
-
-    def render_fleet_board(self):
-        for r in range(config.GRID_SIZE):
-            for c in range(config.GRID_SIZE):
-                canvas, text_id = self.tiles[r][c]
-                canvas.unbind("<Button-1>")
-                shot_state = self.engine.ai_shots.get((r, c))
-
-                if shot_state == "sunk":
-                    canvas.config(bg=constants.SUNK_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.SUNK_TEXT,
-                        font=constants.SUNK_FONT,
-                        fill=constants.HIT_TEXT_COLOR,
-                        angle=constants.SUNK_ANGLE,
-                    )
-                elif shot_state == "hit":
-                    canvas.config(bg=constants.HIT_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.HIT_TEXT,
-                        font=constants.BTN_FONT,
-                        fill=constants.HIT_TEXT_COLOR,
-                        angle=0,
-                    )
-                elif shot_state == "miss":
-                    canvas.config(bg=constants.MISS_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.MISS_TEXT,
-                        font=constants.BTN_FONT,
-                        fill=constants.MISS_TEXT_COLOR,
-                        angle=0,
-                    )
-                elif self.engine.player_board[r][c] == 1:
-                    canvas.config(bg=constants.SHIP_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.SHIP_TEXT,
-                        font=constants.BTN_FONT,
-                        fill=constants.HIT_TEXT_COLOR,
-                        angle=0,
-                    )
-                else:
-                    canvas.config(bg=constants.FLEET_WATER_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.WATER_TEXT,
-                        font=constants.BTN_FONT,
-                        fill=constants.TEXT_COLOR,
-                        angle=0,
-                    )
-
-    def render_enemy_board(self):
-        for r in range(config.GRID_SIZE):
-            for c in range(config.GRID_SIZE):
-                canvas, text_id = self.tiles[r][c]
-                shot_state = self.engine.player_shots.get((r, c))
-
-                if shot_state == "sunk":
-                    canvas.unbind("<Button-1>")
-                    canvas.config(bg=constants.SUNK_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.SUNK_TEXT,
-                        font=constants.SUNK_FONT,
-                        fill=constants.HIT_TEXT_COLOR,
-                        angle=constants.SUNK_ANGLE,
-                    )
-                elif shot_state == "hit":
-                    canvas.unbind("<Button-1>")
-                    canvas.config(bg=constants.HIT_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.HIT_TEXT,
-                        font=constants.BTN_FONT,
-                        fill=constants.HIT_TEXT_COLOR,
-                        angle=0,
-                    )
-                elif shot_state == "miss":
-                    canvas.unbind("<Button-1>")
-                    canvas.config(bg=constants.MISS_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.MISS_TEXT,
-                        font=constants.BTN_FONT,
-                        fill=constants.MISS_TEXT_COLOR,
-                        angle=0,
-                    )
-                else:
-                    canvas.config(bg=constants.WATER_COLOR)
-                    canvas.itemconfig(
-                        text_id,
-                        text=constants.WATER_TEXT,
-                        font=constants.BTN_FONT,
-                        fill=constants.TEXT_COLOR,
-                        angle=0,
-                    )
-                    if self.engine.game_over:
-                        canvas.unbind("<Button-1>")
-                    else:
-                        canvas.bind(
-                            "<Button-1>", lambda _e, r=r, c=c: self.on_square_click(r, c)
-                        )
-
-
-    def mark_ship_sunk(self, coords):
-        for sr, sc in coords:
-            tile_canvas, tile_text_id = self.tiles[sr][sc]
-            tile_canvas.config(bg=constants.SUNK_COLOR)
-            tile_canvas.itemconfig(
-                tile_text_id,
-                text=constants.SUNK_TEXT,
-                font=constants.SUNK_FONT,
-                fill=constants.HIT_TEXT_COLOR,
-                angle=constants.SUNK_ANGLE,
+            self.board_view.render_enemy_board(
+                self.engine.player_shots,
+                self.engine.game_over,
             )
 
-    def disable_board(self):
-        for row in self.tiles:
-            for canvas, _text_id in row:
-                canvas.unbind("<Button-1>")
-
     def on_square_click(self, r, c):
-        if self.setup_mode:
-            self.handle_setup_click(r, c)
+        if self.setup.active:
+            self.setup.handle_click(r, c)
             return
 
         if self.viewing_player_fleet:
             return
 
-        canvas, text_id = self.tiles[r][c]
-        canvas.unbind("<Button-1>")
-
         result = self.engine.fire_shot(r, c)
+        if result == "ignored":
+            return
+
         event_note = ""
-
-        if result in ("hit", "sunk"):
-            if result == "sunk":
-                self.mark_ship_sunk(self.engine.last_sunk_coords)
-                event_note = "Enemy Ship Sunk!"
-            else:
-                canvas.config(bg=constants.HIT_COLOR)
-                canvas.itemconfig(
-                    text_id,
-                    text=constants.HIT_TEXT,
-                    font=constants.BTN_FONT,
-                    fill=constants.HIT_TEXT_COLOR,
-                    angle=0,
-                )
-
+        if result == "sunk":
+            self.board_view.mark_ship_sunk(self.engine.last_sunk_coords)
+            event_note = "Enemy Ship Sunk!"
+        elif result == "hit":
+            self.board_view.set_tile_hit(r, c)
         elif result == "miss":
-            canvas.config(bg=constants.MISS_COLOR)
-            canvas.itemconfig(
-                text_id,
-                text=constants.MISS_TEXT,
-                font=constants.BTN_FONT,
-                fill=constants.MISS_TEXT_COLOR,
-                angle=0,
-            )
+            self.board_view.set_tile_miss(r, c)
 
-        self.update_health_bar()
-        self.status_label.config(text=self.format_status(event_note))
+        self.hud.update_health_bar(self.engine.player_hp, self.engine.max_player_hp)
+        self.hud.set_battle_status(
+            self.engine.shots_left,
+            self.engine.player_hp,
+            self.engine.max_player_hp,
+            event_note,
+        )
 
         if self.engine.game_over:
             if self.engine.won:
-                self.status_label.config(text=constants.VICTORY_TEXT, fg=constants.VICTORY_COLOR)
+                self.hud.set_game_over_status(
+                    constants.VICTORY_TEXT, constants.VICTORY_COLOR
+                )
             elif self.engine.loss_reason == "hp":
-                self.status_label.config(text=constants.GAME_OVER_HP, fg=constants.GAME_OVER_COLOR)
+                self.hud.set_game_over_status(
+                    constants.GAME_OVER_HP, constants.GAME_OVER_COLOR
+                )
             else:
-                self.status_label.config(text=constants.GAME_OVER_AMMO, fg=constants.GAME_OVER_COLOR)
-            self.disable_board()
+                self.hud.set_game_over_status(
+                    constants.GAME_OVER_AMMO, constants.GAME_OVER_COLOR
+                )
+            self.board_view.disable_board()
+
 
 if __name__ == "__main__":
     root = tk.Tk()

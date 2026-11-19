@@ -2,8 +2,10 @@ import random
 
 try:
     from battleship import config
+    from battleship.modules.ai import AIController
 except ImportError:
     import config
+    from modules.ai import AIController
 
 
 class GameEngine:
@@ -14,34 +16,36 @@ class GameEngine:
         max_shots=config.MAX_SHOTS,
         ai_hit_chance=0.35,
     ):
+        # --- Match Configuration ---
         self.grid_size = grid_size
         self.ship_sizes = ship_sizes
         self.max_shots = max_shots
-        self.ai_hit_chance = ai_hit_chance
+        self.total_ship_cells = sum(self.ship_sizes)
 
+        # --- Enemy Board & AI Controller ---
+        self.ai_hit_chance = ai_hit_chance
+        self.ai = AIController(hit_chance=ai_hit_chance)
         self.board = self.create_board()
         self.ships = []
         self.hit_coords = set()
         self.last_sunk_coords = []
+        self.ai_shots = {}
         self.place_ships()
 
+        # --- Player Fleet, Ammo & Health ---
         self.player_board = self.create_board()
         self.player_ships = []
-
         self.player_shots = {}
-        self.ai_shots = {}
-
         self.shots_left = self.max_shots
         self.hits = 0
-        self.total_ship_cells = sum(self.ship_sizes)
-
-        # Temporary player health pool (matches total fleet HP until 2nd board is added)
         self.max_player_hp = self.total_ship_cells
         self.player_hp = self.max_player_hp
 
+        # --- Match Status ---
         self.game_over = False
         self.won = False
         self.loss_reason = None
+
 
     def create_board(self):
         return [[0 for _ in range(self.grid_size)] for _ in range(self.grid_size)]
@@ -85,7 +89,7 @@ class GameEngine:
                     break
 
     def simulate_ai_turn(self):
-        if random.random() < self.ai_hit_chance:
+        if self.ai.should_hit_player():
             self.player_hp = max(0, self.player_hp - 1)
             return True
         return False
