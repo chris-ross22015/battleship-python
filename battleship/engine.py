@@ -25,6 +25,9 @@ class GameEngine:
         self.last_sunk_coords = []
         self.place_ships()
 
+        self.player_board = self.create_board()
+        self.player_ships = []
+
         self.shots_left = self.max_shots
         self.hits = 0
         self.total_ship_cells = sum(self.ship_sizes)
@@ -40,21 +43,39 @@ class GameEngine:
     def create_board(self):
         return [[0 for _ in range(self.grid_size)] for _ in range(self.grid_size)]
 
+    def get_ship_coords(self, start_r, start_c, size, orientation):
+        if orientation == "hrztl":
+            return [(start_r, start_c + i) for i in range(size)]
+        return [(start_r + i, start_c) for i in range(size)]
+
+    def can_place_ship(self, board, ship_coords):
+        for r, c in ship_coords:
+            if not (0 <= r < self.grid_size and 0 <= c < self.grid_size):
+                return False
+            if board[r][c] != 0:
+                return False
+        return True
+
+    def place_player_ship(self, start_r, start_c, size, orientation):
+        ship_coords = self.get_ship_coords(start_r, start_c, size, orientation)
+        if not self.can_place_ship(self.player_board, ship_coords):
+            return False
+
+        for r, c in ship_coords:
+            self.player_board[r][c] = 1
+        self.player_ships.append(set(ship_coords))
+        return True
+
     def place_ships(self):
         self.ships = []
         for size in self.ship_sizes:
             while True:
                 orientation = random.choice(["hrztl", "vert"])
-                if orientation == "hrztl":
-                    start_r = random.randint(0, self.grid_size - 1)
-                    start_c = random.randint(0, self.grid_size - size)
-                    ship_coords = [(start_r, start_c + i) for i in range(size)]
-                else:
-                    start_r = random.randint(0, self.grid_size - size)
-                    start_c = random.randint(0, self.grid_size - 1)
-                    ship_coords = [(start_r + i, start_c) for i in range(size)]
+                start_r = random.randint(0, self.grid_size - 1)
+                start_c = random.randint(0, self.grid_size - 1)
+                ship_coords = self.get_ship_coords(start_r, start_c, size, orientation)
 
-                if all(self.board[r][c] == 0 for r, c in ship_coords):
+                if self.can_place_ship(self.board, ship_coords):
                     for r, c in ship_coords:
                         self.board[r][c] = 1
                     self.ships.append(set(ship_coords))
@@ -104,4 +125,3 @@ class GameEngine:
         if not is_hit:
             return "miss"
         return "sunk" if sunk_ship else "hit"
-
