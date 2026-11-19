@@ -2,8 +2,14 @@ import random
 
 
 class AIController:
-    def __init__(self, hit_chance=0.35):
-        self.hit_chance = hit_chance
+    def choose_target(self, grid_size, previous_shots):
+        available_targets = [
+            (r, c)
+            for r in range(grid_size)
+            for c in range(grid_size)
+            if (r, c) not in previous_shots
+        ]
+        if not available_targets:
+            return None
+        return random.choice(available_targets)
 
-    def should_hit_player(self):
-        return random.random() < self.hit_chance

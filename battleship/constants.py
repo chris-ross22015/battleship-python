@@ -48,6 +48,15 @@ HIT_COLOR = "#FF0000"          # red
 SUNK_COLOR = "#8B0000"         # darkred
 MISS_COLOR = "#B0C4DE"         # lightsteelblue
 
+AI_TURN_DELAY_MS = 850
+AI_RETURN_DELAY_MS = 1100
+AI_LAST_SHOT_BORDER_COLOR = "#FF0000"  # red highlight on newest enemy shot
+AI_FIRING_STATUS_NOTE = "Enemy Taking Aim at Your Fleet..."
+AI_HIT_STATUS_NOTE = "Enemy Hit Your Ship!"
+AI_SUNK_STATUS_NOTE = "Enemy Sunk One of Your Ships!"
+AI_MISS_STATUS_NOTE = "Enemy Shot Missed!"
+
+
 VICTORY_COLOR = "#008000"      # green
 VICTORY_TEXT = "VICTORY! All enemy ships sunk!"
 
